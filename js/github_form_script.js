@@ -1,6 +1,10 @@
 // GitHub用フォーム送信スクリプト
 function openForm(rstr, cid, fid) {
+  console.log('=== openForm 開始 ===');
+  console.log('rstr:', rstr, 'cid:', cid, 'fid:', fid);
+  
   if(!rstr || !cid || !fid) {
+    console.error('パラメータが不足しています');
     return false;
   }
   var fname = gfe(fid);
@@ -28,7 +32,9 @@ function openForm(rstr, cid, fid) {
   script.setAttribute('src', 'https://code.jquery.com/jquery-1.12.4.min.js')
   script.setAttribute('type', 'text/javascript')
   script.addEventListener('load', function() {
+    console.log('jQuery読み込み完了');
     $(function() {
+      console.log('フォーム取得開始:', m);
       $.ajax({
         url: m,
         type: 'POST',
@@ -44,17 +50,21 @@ function openForm(rstr, cid, fid) {
         crossDomain: false,
         cache: false,
         success: function(data){
+          console.log('フォーム取得成功');
           if(isJson(data)) {
             var json_data = $.parseJSON(data);
-            console.log(json_data);
+            console.log('JSONレスポンス:', json_data);
           } else {
+            console.log('フォームHTML取得、置き換え開始');
             $("form#" + fname).replaceWith(data);
-            // フォーム読み込み後に送信ボタンのイベントを設定
+            console.log('フォーム置き換え完了、送信イベント設定開始');
             setupFormSubmit(fid);
+            console.log('送信イベント設定完了');
           }
         },
-        error: function(data){
-          console.log(data);
+        error: function(xhr, status, error){
+          console.error('フォーム取得エラー:', status, error);
+          console.error('レスポンス:', xhr);
         },
       });
     })
@@ -64,10 +74,18 @@ function openForm(rstr, cid, fid) {
 
 // フォーム送信処理のセットアップ
 function setupFormSubmit(form_id) {
+  console.log('=== setupFormSubmit 開始 ===');
+  console.log('form_id:', form_id);
+  
   var common_url = "https://local.next-cloud.jp:8010/sfa/forms/";
   
   // 送信ボタンのクリックイベント
-  $(document).on('click', "button[sfa-button-element-name='submit'][sfa-submit-button-id='" + form_id + "']", function(event) {
+  var buttonSelector = "button[sfa-button-element-name='submit'][sfa-submit-button-id='" + form_id + "']";
+  console.log('送信ボタンセレクタ:', buttonSelector);
+  console.log('送信ボタン要素数:', $(buttonSelector).length);
+  
+  $(document).on('click', buttonSelector, function(event) {
+    console.log('=== 送信ボタンクリック ===');
     event.preventDefault();
     
     var $button = $(this);
@@ -78,7 +96,9 @@ function setupFormSubmit(form_id) {
     var form_sending_lable_button = "span[sfa-button-sending-label-name='" + form_id + "']";
     
     // バリデーションチェック
+    console.log('バリデーション開始');
     var validate_result = $(form_element).validationEngine('validate');
+    console.log('バリデーション結果:', validate_result);
     
     if(validate_result) {
       // 送信中表示
@@ -95,6 +115,9 @@ function setupFormSubmit(form_id) {
       formData.append('href', location.origin + location.pathname);
       
       // フォーム送信
+      console.log('フォーム送信開始:', common_url + 'regist');
+      console.log('送信データ:', formData);
+      
       $.ajax({
         type: 'post',
         url: common_url + 'regist',
@@ -104,10 +127,13 @@ function setupFormSubmit(form_id) {
         crossDomain: false,
         cache: false,
         success: function(data){
-          console.log('送信成功:', data);
+          console.log('=== 送信成功 ===');
+          console.log('レスポンスデータ:', data);
           var result = $.parseJSON(data);
+          console.log('パース結果:', result);
           
           if(result.result){
+            console.log('送信結果OK、サンクスページ取得開始');
             // サンクスページ取得
             $.ajax({
               type: 'post',
@@ -122,6 +148,7 @@ function setupFormSubmit(form_id) {
               crossDomain: false,
               cache: false,
               success: function(html){
+                console.log('サンクスページ取得成功');
                 $("div[sfa-form-area='" + form_id + "']").replaceWith(html);
               },
               error: function(data){
