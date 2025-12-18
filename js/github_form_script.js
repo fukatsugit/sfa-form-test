@@ -97,8 +97,25 @@ function setupFormSubmit(form_id) {
     
     // バリデーションチェック
     console.log('バリデーション開始');
-    var validate_result = $(form_element).validationEngine('validate');
-    console.log('バリデーション結果:', validate_result);
+    var validate_result = true;
+    
+    // validationEngineが読み込まれている場合のみ実行
+    if(typeof $.fn.validationEngine !== 'undefined') {
+      validate_result = $(form_element).validationEngine('validate');
+      console.log('バリデーション結果:', validate_result);
+    } else {
+      console.warn('validationEngineが読み込まれていないため、バリデーションをスキップします');
+      // 必須項目の簡易チェック
+      var hasError = false;
+      $(form_element).find('[class*="required"]').each(function() {
+        if(!$(this).val()) {
+          alert($(this).attr('name') + 'は必須項目です');
+          hasError = true;
+          return false;
+        }
+      });
+      validate_result = !hasError;
+    }
     
     if(validate_result) {
       // 送信中表示
